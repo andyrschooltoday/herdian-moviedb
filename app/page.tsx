@@ -3,13 +3,13 @@ import axios from "axios"
 import { useState, useEffect } from "react"
 
 export default function Home() {
-  const [favorites, setFavorites] = useState([])
+  const [favorites, setFavorites] = useState<MovieData[]>([]);
 
-  function handleFavorite(type, data) {
-    if (type == "add" && favorites.map(i => i.id).indexOf(data.id) == -1) {
-      setFavorites([...favorites, data])
-    } else if (type == "del" && favorites.map(i => i.id).indexOf(data.id) != -1) {
-      setFavorites(favorites.toSpliced(favorites.map(i => i.id).indexOf(data), 1))
+  function handleFavorite(type: 'add' | 'del', data: MovieData): void {
+    if (type === 'add' && favorites.map(i => i.id).indexOf(data.id) === -1) {
+      setFavorites([...favorites, data]);
+    } else if (type === 'del' && favorites.map(i => i.id).indexOf(data.id) !== -1) {
+      setFavorites(favorites.filter(item => item.id !== data.id));
     }
   }
 
