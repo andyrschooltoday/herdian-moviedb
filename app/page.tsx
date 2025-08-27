@@ -2,14 +2,34 @@
 import axios from "axios"
 import { useState, useEffect } from "react"
 
-export default function Home() {
-  const [favorites, setFavorites] = useState([])
+interface MovieData {
+  id: string;
+  title: string;
+  year: string;
+}
 
-  function handleFavorite(type, data) {
-    if (type == "add" && favorites.map(i => i.id).indexOf(data.id) == -1) {
+interface SearchProps {
+  onFavorite: (type: 'add' | 'del', data: MovieData) => void;
+}
+
+interface MovieProps {
+  data: MovieData;
+  onFavorite: (type: 'add' | 'del', data: MovieData) => void;
+}
+
+interface FavoritesProps {
+  list: MovieData[];
+  onFavorite: (type: 'add' | 'del', data: MovieData) => void;
+}
+
+export default function Home() {
+  const [favorites, setFavorites] = useState<MovieData[]>([])
+
+  function handleFavorite(type: 'add' | 'del', data: MovieData) {
+    if (type === "add" && favorites.map(i => i.id).indexOf(data.id) === -1) {
       setFavorites([...favorites, data])
-    } else if (type == "del" && favorites.map(i => i.id).indexOf(data.id) != -1) {
-      setFavorites(favorites.toSpliced(favorites.map(i => i.id).indexOf(data), 1))
+    } else if (type === "del" && favorites.map(i => i.id).indexOf(data.id) !== -1) {
+      setFavorites(favorites.filter(f => f.id !== data.id))
     }
   }
 
@@ -35,7 +55,7 @@ export default function Home() {
   );
 }
 
-function Search({ onFavorite }) {
+function Search({ onFavorite }: SearchProps) {
   const searchUrl = "http://www.omdbapi.com/?apikey=4e811ae3&s="
   const [keyword, setKeyword] = useState("")
   const [url, setUrl] = useState(searchUrl)
@@ -79,7 +99,7 @@ function Search({ onFavorite }) {
   )
 }
 
-function SearchResult({ data, handleFavorite }) {
+function SearchResult({ data, handleFavorite }: { data: any[], handleFavorite: (type: 'add' | 'del', data: MovieData) => void }) {
   const itemList = data && data.map((v, i) => 
     <Movie key={i} data={{ id: v.imdbID, title: v.Title, year: v.Year }} onFavorite={handleFavorite} />
   )
@@ -91,7 +111,7 @@ function SearchResult({ data, handleFavorite }) {
   )
 }
 
-function Movie({ data, onFavorite }) {
+function Movie({ data, onFavorite }: MovieProps) {
   const imgUrl = "https://img.omdbapi.com/?apikey=4e811ae3&i="
 
   return (
@@ -107,7 +127,7 @@ function Movie({ data, onFavorite }) {
   )
 }
 
-function Favorites({ list, onFavorite }) {
+function Favorites({ list, onFavorite }: FavoritesProps) {
   const itemList = list && list.map((v, i) => 
     <Movie key={i} data={{ id: v.id, title: v.title, year: v.year }} onFavorite={onFavorite} />
   )
