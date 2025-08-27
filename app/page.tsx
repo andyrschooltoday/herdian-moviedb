@@ -8,6 +8,13 @@ interface MovieData {
   year: string;
 }
 
+interface SearchResultData {
+  imdbID: string;
+  Title: string;
+  Year: string;
+  Search?: any
+}
+
 interface SearchProps {
   onFavorite: (type: 'add' | 'del', data: MovieData) => void;
 }
@@ -24,6 +31,26 @@ interface FavoritesProps {
 
 export default function Home() {
   const [favorites, setFavorites] = useState<MovieData[]>([])
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+    const storedFavorites = localStorage.getItem("favorites")
+    if (storedFavorites) {
+      try {
+        const parsed = JSON.parse(storedFavorites) as MovieData[]
+        setFavorites(parsed)
+      } catch (e) {
+        console.error('Error parsing favorites:', e)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    if (mounted) {
+      localStorage.setItem("favorites", JSON.stringify(favorites))
+    }
+  }, [favorites, mounted])
 
   function handleFavorite(type: 'add' | 'del', data: MovieData) {
     if (type === "add" && favorites.map(i => i.id).indexOf(data.id) === -1) {
@@ -60,18 +87,25 @@ function Search({ onFavorite }: SearchProps) {
   const [keyword, setKeyword] = useState("")
   const [url, setUrl] = useState(searchUrl)
   const [loading, setLoading] = useState(false)
-  const [result, setResult] = useState(null)
+  const [result, setResult] = useState<SearchResultData[] | null>(null)
 
   useEffect(() => {
-    axios.get(url)
-      .then((response) => {
+    const fetchData = async () => {
+      try {
+        const response = await axios.get<{ Search: SearchResultData[] }>(url)
+        setResult(response.data.Search || null)
+      } catch (error) {
+        console.error(error)
+        setResult(null)
+      } finally {
         setLoading(false)
-        setResult(response.data.Search)
-      }).catch((error) => {
-        console.log(error)
-        setLoading(false)
-      })
-  }, [url])
+      }
+    }
+
+    if (url !== searchUrl) {
+      fetchData()
+    }
+  }, [url, searchUrl])
 
   return (
     <div>
@@ -100,9 +134,19 @@ function Search({ onFavorite }: SearchProps) {
 }
 
 function SearchResult({ data, handleFavorite }: { data: any[], handleFavorite: (type: 'add' | 'del', data: MovieData) => void }) {
-  const itemList = data && data.map((v, i) => 
-    <Movie key={i} data={{ id: v.imdbID, title: v.Title, year: v.Year }} onFavorite={handleFavorite} />
-  )
+  if (!data) return null
+
+  const itemList = data.map((v) => (
+    <Movie 
+      key={v.imdbID} 
+      data={{ 
+        id: v.imdbID, 
+        title: v.Title, 
+        year: v.Year 
+      }} 
+      onFavorite={handleFavorite} 
+    />
+  ))
 
   return (
     <ul className="grid grid-cols-4 grid-rows-auto">
